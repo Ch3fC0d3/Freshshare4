@@ -953,11 +953,13 @@ async function initializeDatabase() {
  * Starts the Express server on the configured port.
  */
 function startServer() {
-  const server = app.listen(PORT, () => {
-    console.log(`✅ SUCCESS: Server is running on port ${PORT}`);
-    console.log(`API endpoints available at http://localhost:${PORT}/api/`);
-    console.log(`✅ Dashboard available at http://localhost:${PORT}/dashboard`);
-    console.log('=========================================');
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`Server is running on port ${PORT}`);
+    logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`API endpoints available at http://localhost:${PORT}/api/`);
+      console.log(`Dashboard available at http://localhost:${PORT}/dashboard`);
+    }
   });
 
   server.on('error', (error) => {
