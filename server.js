@@ -508,6 +508,9 @@ console.log('All routes initialized successfully');
 const marketplaceApiRoutes = require('./routes/api/marketplace');
 app.use('/api/marketplace', marketplaceApiRoutes);
 
+const dashboardRoutes = require('./routes/dashboard.routes');
+app.use('/api/dashboard', dashboardRoutes);
+
 console.log('API routes available:');
 console.log('- /api/marketplace/upc/:upc - UPC lookup endpoint');
 console.log('- /api/marketplace/upc-test/:upc - UPC test endpoint');
