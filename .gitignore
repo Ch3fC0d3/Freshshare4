@@ -9,6 +9,8 @@ node_modules/
 
 # Log files
 *.log
+logs/
+*.log.*
 
 # Video files
 *.mp4

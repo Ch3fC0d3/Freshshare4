@@ -1,17 +1,22 @@
+// Load logger early for error handling
+const logger = require('./utils/logger');
+
 // Global error handlers to catch any uncaught exceptions
 process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-  console.error('Error details:', err.name, err.message);
-  console.error(err.stack);
+  logger.error('UNCAUGHT EXCEPTION! Shutting down...', { 
+    name: err.name, 
+    message: err.message,
+    stack: err.stack 
+  });
   process.exit(1);
 });
 
-// (moved lightweight app health route below after app initialization)
-
 process.on('unhandledRejection', (err) => {
-  console.error('UNHANDLED REJECTION! 💥 Shutting down...');
-  console.error('Error details:', err.name, err.message);
-  console.error(err.stack);
+  logger.error('UNHANDLED REJECTION! Shutting down...', { 
+    name: err.name, 
+    message: err.message,
+    stack: err.stack 
+  });
   process.exit(1);
 });
 const express = require('express');
@@ -28,42 +33,39 @@ const fs = require('fs');
 // Load environment variables from .env file BEFORE requiring auth.config
 const dotenv = require('dotenv');
 const envPath = path.resolve(__dirname, '.env');
-console.log('Loading environment variables from:', envPath);
+
 if (fs.existsSync(envPath)) {
   const result = dotenv.config({ path: envPath });
   if (result.error) {
-    console.error('Error loading .env file:', result.error);
+    logger.error('Error loading .env file', { error: result.error });
   } else {
-    console.log('Successfully loaded environment variables');
-    // Log environment variables for debugging
-    console.log('Environment variables loaded:');
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('USDA_API_KEY present:', process.env.USDA_API_KEY ? 'Yes' : 'No');
-    if (process.env.USDA_API_KEY) {
-      const keyLength = process.env.USDA_API_KEY.length;
-      console.log('USDA_API_KEY length:', keyLength);
-      console.log('USDA_API_KEY preview:', `${process.env.USDA_API_KEY.substring(0, 3)}...${process.env.USDA_API_KEY.substring(keyLength - 3)}`);
-    } else {
-      console.log('WARNING: USDA_API_KEY is not set!');
+    logger.info('Environment variables loaded successfully');
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug('Environment check', {
+        NODE_ENV: process.env.NODE_ENV,
+        USDA_API_KEY_present: !!process.env.USDA_API_KEY
+      });
+    }
+    if (!process.env.USDA_API_KEY) {
+      logger.warn('USDA_API_KEY is not set');
     }
   }
 } else {
-  console.error('.env file not found at path:', envPath);
-  dotenv.config(); // Fallback to default dotenv behavior
+  logger.warn('.env file not found, using default environment');
+  dotenv.config();
 }
 
-// Now that env is loaded, require auth.config
+// Now that env is loaded, require auth.config and constants
 const authConfig = require('./config/auth.config');
+const CONSTANTS = require('./config/constants');
 
 const app = express();
-// Use port 3002 to ensure consistency with frontend JS in local-auth.js
-const PORT = 3002;
+const PORT = process.env.PORT || CONSTANTS.SERVER.DEFAULT_PORT;
 
 // Ensure templates always have an assetVersion available
 app.locals.assetVersion = process.env.ASSET_VERSION || String(Date.now());
 
-// Initialize all routes and middleware first, then start the server
-console.log('Initializing routes and middleware first...');
+logger.info('Initializing FreshShare application', { port: PORT, env: process.env.NODE_ENV || 'development' });
 
 // Middleware - only initialize once
 app.use(cors());
@@ -74,7 +76,7 @@ app.use(cookieParser());
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} ${req.method} ${req.url}`);
+  logger.logRequest(req);
   next();
 });
 
@@ -147,7 +149,7 @@ app.use((req, res, next) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  logger.logError(err, { url: req.originalUrl, method: req.method });
   res.status(500).json({
     success: false,
     message: 'Internal server error',
@@ -191,42 +193,35 @@ app.use(async (req, res, next) => {
       token = req.query.token;
       
       // If token is in query, set it as a cookie for persistence
-      // This helps with redirects that include the token
       res.cookie('token', token, {
-        httpOnly: true,
+        httpOnly: CONSTANTS.COOKIE.HTTP_ONLY,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-        sameSite: 'lax',
+        maxAge: CONSTANTS.COOKIE.MAX_AGE_MS,
+        sameSite: CONSTANTS.COOKIE.SAME_SITE,
         path: '/'
       });
     }
 
-    const mask = (value) => {
-      if (!value || typeof value !== 'string') return '(none)';
-      if (value.length <= 12) return value;
-      return `${value.slice(0, 6)}…${value.slice(-6)}`;
-    };
-
-    try {
-      console.log(`[globalAuth] ${req.method} ${req.originalUrl}`);
-      console.log('[globalAuth] token candidate (pre-check):', mask(token));
-    } catch (_) {}
+    // Only log in development
+    if (process.env.NODE_ENV !== 'production') {
+      logger.debug(`Global auth middleware: ${req.method} ${req.originalUrl}`, {
+        hasToken: !!token
+      });
+    }
 
     if (token) {
       try {
         // Verify token using the same secret as in auth.config.js
-        console.log('[globalAuth] verifying token with primary secret. Token length:', token.length);
-        console.log('[globalAuth] token preview:', mask(token));
         const primarySecret = (authConfig && authConfig.secret) || process.env.JWT_SECRET;
         const legacySecret = process.env.LEGACY_JWT_SECRET;
         let decoded = null;
         try {
           decoded = jwt.verify(token, primarySecret);
         } catch (primaryErr) {
-          console.warn('[globalAuth] primary JWT verification failed, attempting legacy secret:', primaryErr && primaryErr.message);
+          logger.debug('Primary JWT verification failed, attempting legacy secret');
           if (legacySecret) {
             decoded = jwt.verify(token, legacySecret);
-            console.log('[globalAuth] legacy JWT secret accepted token');
+            logger.warn('Token verified using legacy JWT secret');
           } else {
             throw primaryErr;
           }
@@ -256,56 +251,39 @@ app.use(async (req, res, next) => {
 
           // Add user data to locals for all views
           res.locals.user = plainUser;
-          console.log('User authenticated:', user.username, 'ID:', user._id); // Enhanced debug log
+          logger.logAuth('User authenticated', user._id);
           
-          // Check if token is close to expiration (less than 24 hours remaining)
-          // and renew it if needed
-          if (decoded.exp && decoded.exp - (Date.now() / 1000) < 24 * 60 * 60) {
-            console.log('Token close to expiration, renewing for user:', user.username);
+          // Check if token is close to expiration and renew it if needed
+          if (decoded.exp && decoded.exp - (Date.now() / 1000) < CONSTANTS.JWT.RENEWAL_THRESHOLD_SECONDS) {
+            logger.debug('Token close to expiration, renewing');
             
-            // Generate new token with fresh expiration (7 days)
+            // Generate new token with fresh expiration
             const newToken = jwt.sign({ id: user._id }, (authConfig && authConfig.secret) || process.env.JWT_SECRET, {
-              expiresIn: 7 * 24 * 60 * 60 // 7 days
+              expiresIn: CONSTANTS.JWT.EXPIRATION_SECONDS
             });
             
             // Set new token as cookie
             res.cookie('token', newToken, {
-              httpOnly: true,
+              httpOnly: CONSTANTS.COOKIE.HTTP_ONLY,
               secure: process.env.NODE_ENV === 'production',
-              maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
-              sameSite: 'lax',
+              maxAge: CONSTANTS.COOKIE.MAX_AGE_MS,
+              sameSite: CONSTANTS.COOKIE.SAME_SITE,
               path: '/'
             });
             
-            console.log('Token renewed successfully for user:', user.username);
+            logger.debug('Token renewed successfully');
           }
         } else {
-          console.log('Token valid but user not found in database');
+          logger.debug('Token valid but user not found in database');
         }
       } catch (err) {
-        console.error('[globalAuth] token verification failed:', err && err.name, err && err.message);
-        console.error('[globalAuth] token value (masked):', mask(token));
+        logger.debug('Token verification failed', { error: err.message });
       }
-    } else {
-      console.log('No authentication token found');
     }
 
-    try {
-      if (res.locals.user) {
-        console.log('[globalAuth] locals.user set to:', {
-          id: String(res.locals.user._id || ''),
-          username: res.locals.user.username || '(no username)',
-          roles: Array.isArray(res.locals.user.roles) ? res.locals.user.roles : '(no roles)'
-        });
-      } else {
-        console.log('[globalAuth] locals.user remains null after auth middleware');
-      }
-    } catch (logErr) {
-      console.error('[globalAuth] locals.user logging failed:', logErr && logErr.message);
-    }
     next();
   } catch (err) {
-    console.error('Auth middleware error:', err);
+    logger.error('Auth middleware error', { error: err.message });
     next();
   }
 });
