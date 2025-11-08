@@ -31,29 +31,31 @@ const dbConfig = require('./config/db.config');
 const fs = require('fs');
 
 // Load environment variables from .env file BEFORE requiring auth.config
+// On Railway, environment variables are injected directly - don't override them
 const dotenv = require('dotenv');
 const envPath = path.resolve(__dirname, '.env');
 
+// Only load .env if it exists AND we're not in production (Railway)
+// Railway injects env vars directly, so we don't need dotenv there
 if (fs.existsSync(envPath)) {
   const result = dotenv.config({ path: envPath });
   if (result.error) {
     logger.error('Error loading .env file', { error: result.error });
   } else {
-    logger.info('Environment variables loaded successfully');
-    if (process.env.NODE_ENV !== 'production') {
-      logger.debug('Environment check', {
-        NODE_ENV: process.env.NODE_ENV,
-        USDA_API_KEY_present: !!process.env.USDA_API_KEY
-      });
-    }
-    if (!process.env.USDA_API_KEY) {
-      logger.warn('USDA_API_KEY is not set');
-    }
+    logger.info('Environment variables loaded from .env file');
   }
-} else {
-  logger.warn('.env file not found, using default environment');
-  dotenv.config();
+} else if (process.env.NODE_ENV !== 'production') {
+  // Only warn about missing .env in development
+  logger.warn('.env file not found, using environment variables');
 }
+
+// Log environment status (without exposing secrets)
+logger.info('Environment configuration', {
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: process.env.PORT || 'not set',
+  JWT_SECRET: process.env.JWT_SECRET ? 'SET' : 'NOT SET',
+  MONGODB_URI: process.env.MONGODB_URI ? 'SET' : 'NOT SET'
+});
 
 // Now that env is loaded, require auth.config and constants
 const authConfig = require('./config/auth.config');
