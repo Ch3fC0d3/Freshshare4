@@ -154,16 +154,6 @@ app.use((req, res, next) => {
 // Token synchronization middleware - ensures tokens in Authorization headers are set as cookies
 // Removed token synchronization middleware; rely solely on HttpOnly cookie from login route
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  logger.logError(err, { url: req.originalUrl, method: req.method });
-  res.status(500).json({
-    success: false,
-    message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
-  });
-});
-
 // Ensure uploads directory exists
 const uploadDir = path.join(__dirname, 'public/uploads/marketplace');
 if (!fs.existsSync(uploadDir)) {
@@ -299,9 +289,15 @@ app.use(async (req, res, next) => {
 
 // Page Routes
 app.get('/', (req, res) => {
-  res.render('pages/index', { 
-    title: 'FreshShare - Home'
-  });
+  try {
+    logger.debug('Homepage requested');
+    res.render('pages/index', { 
+      title: 'FreshShare - Home'
+    });
+  } catch (error) {
+    logger.error('Homepage render error', { error: error.message, stack: error.stack });
+    res.status(500).send('Error loading homepage');
+  }
 });
 
 app.get('/marketplace', async (req, res) => {
@@ -934,6 +930,41 @@ app.get('/api/health/status', (req, res) => {
     });
   } catch (e) {
     res.status(500).json({ success: false });
+  }
+});
+
+// 404 handler - must be after all routes
+app.use((req, res, next) => {
+  logger.warn(`404 - Route not found: ${req.method} ${req.originalUrl}`);
+  res.status(404).render('error', {
+    title: 'Page Not Found',
+    message: 'The page you are looking for does not exist.'
+  });
+});
+
+// Global error handler - must be last
+app.use((err, req, res, next) => {
+  logger.error('Unhandled error', {
+    error: err.message,
+    stack: err.stack,
+    url: req.originalUrl,
+    method: req.method
+  });
+  
+  // Send appropriate response
+  if (req.accepts('html')) {
+    res.status(500).render('error', {
+      title: 'Server Error',
+      message: process.env.NODE_ENV === 'production' 
+        ? 'An error occurred. Please try again later.'
+        : err.message
+    });
+  } else {
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
