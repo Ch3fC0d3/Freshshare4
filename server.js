@@ -64,6 +64,10 @@ const CONSTANTS = require('./config/constants');
 const app = express();
 const PORT = process.env.PORT || CONSTANTS.SERVER.DEFAULT_PORT;
 
+// Trust proxy - required for Railway and other reverse proxies
+// This allows Express to correctly read X-Forwarded-* headers
+app.set('trust proxy', 1);
+
 // Ensure templates always have an assetVersion available
 app.locals.assetVersion = process.env.ASSET_VERSION || String(Date.now());
 
