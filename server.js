@@ -76,6 +76,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
 
+// Early health check for Railway (before any other routes)
+app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
 // Request logging middleware
 app.use((req, res, next) => {
   logger.logRequest(req);
