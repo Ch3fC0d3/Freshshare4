@@ -31,14 +31,7 @@ public/uploads/*.mkv
 public/uploads/*.webm
 public/uploads/*.m4v
 
-# Image files
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.tiff
-*.ico
+# Image files (only block uploads, allow static assets)
 public/uploads/*.jpg
 public/uploads/*.jpeg
 public/uploads/*.png
@@ -46,6 +39,9 @@ public/uploads/*.gif
 public/uploads/*.bmp
 public/uploads/*.tiff
 public/uploads/*.ico
+public/uploads/marketplace/*.jpg
+public/uploads/marketplace/*.jpeg
+public/uploads/marketplace/*.png
 
 # OS generated files
 .DS_Store
