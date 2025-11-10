@@ -1020,13 +1020,21 @@ async function initializeDatabase() {
  * Starts the Express server on the configured port.
  */
 function startServer() {
+  console.log(`[STARTUP] Attempting to start server on port ${PORT}, binding to 0.0.0.0`);
+  
   const server = app.listen(PORT, '0.0.0.0', () => {
+    const address = server.address();
+    console.log(`[STARTUP] ✅ Server successfully bound to ${address.address}:${address.port}`);
     logger.info(`Server is running on port ${PORT}`);
     logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    logger.info(`Server address: ${JSON.stringify(address)}`);
+    
     if (process.env.NODE_ENV !== 'production') {
       console.log(`API endpoints available at http://localhost:${PORT}/api/`);
       console.log(`Dashboard available at http://localhost:${PORT}/dashboard`);
     }
+    
+    console.log(`[STARTUP] Health check available at http://0.0.0.0:${PORT}/health`);
   });
 
   server.on('error', (error) => {
