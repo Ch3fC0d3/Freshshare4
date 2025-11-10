@@ -77,7 +77,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(cookieParser());
 
 // Early health check for Railway (before any other routes)
+// Multiple endpoints in case Railway checks different paths
 app.get('/health', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/healthz', (req, res) => {
+  res.status(200).send('OK');
+});
+
+app.get('/_health', (req, res) => {
   res.status(200).send('OK');
 });
 
@@ -288,15 +297,35 @@ app.use(async (req, res, next) => {
 // Page Routes - register these AFTER API routes
 
 // Page Routes
-app.get('/', (req, res) => {
+app.get('/', async (req, res, next) => {
   try {
-    logger.debug('Homepage requested');
+    logger.info('Homepage requested');
+    
+    // Try to render, catch any errors
     res.render('pages/index', { 
       title: 'FreshShare - Home'
+    }, (err, html) => {
+      if (err) {
+        logger.error('EJS render error', { 
+          error: err.message, 
+          stack: err.stack 
+        });
+        return res.status(500).send(`
+          <html>
+            <body>
+              <h1>FreshShare</h1>
+              <p>Server is running but template rendering failed.</p>
+              <p>Error: ${err.message}</p>
+              <a href="/health">Health Check</a>
+            </body>
+          </html>
+        `);
+      }
+      res.send(html);
     });
   } catch (error) {
-    logger.error('Homepage render error', { error: error.message, stack: error.stack });
-    res.status(500).send('Error loading homepage');
+    logger.error('Homepage error', { error: error.message, stack: error.stack });
+    next(error);
   }
 });
 
