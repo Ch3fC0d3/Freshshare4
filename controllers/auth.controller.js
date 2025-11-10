@@ -177,13 +177,14 @@ exports.signup = async (req, res) => {
  */
 exports.login = async (req, res) => {
   try {
-    // Validate request body
-    const { username, password, rememberMe } = req.body;
+    // Validate request body - accept either username or email
+    const { username, email, password, rememberMe } = req.body;
+    const loginIdentifier = email || username;
     
-    if (!username || !password) {
+    if (!loginIdentifier || !password) {
       return res.status(400).json({ 
         success: false, 
-        message: "Username and password are required!" 
+        message: "Email/username and password are required!" 
       });
     }
     
@@ -191,8 +192,13 @@ exports.login = async (req, res) => {
     const tokenExpiration = rememberMe ? 30 * 24 * 60 * 60 : 7 * 24 * 60 * 60; // 30 days or 7 days
     const cookieExpiration = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000; // in milliseconds
 
-    // Find user by username - explicitly select password since it's now excluded by default
-    const user = await User.findOne({ username: username }).select('+password');
+    // Find user by username OR email - explicitly select password since it's now excluded by default
+    const user = await User.findOne({ 
+      $or: [
+        { username: loginIdentifier },
+        { email: loginIdentifier }
+      ]
+    }).select('+password');
 
     if (!user) {
       return res.status(404).json({
