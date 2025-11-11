@@ -99,8 +99,16 @@ router.post('/api/auth/signup', signupLimiter, signupValidators, handleValidatio
 
 // Login a user (with rate limiting)
 const loginValidators = [
-  body('email').isString().trim().isEmail(),
-  body('password').isString().isLength({ min: 1 })
+  body('email').optional().isString().trim(),
+  body('username').optional().isString().trim(),
+  body('password').isString().isLength({ min: 1 }),
+  // Custom validator to ensure at least one of email or username is provided
+  body().custom((value, { req }) => {
+    if (!req.body.email && !req.body.username) {
+      throw new Error('Email or username is required');
+    }
+    return true;
+  })
 ];
 router.post('/api/auth/login', authLimiter, loginValidators, handleValidation, authController.login);
 
