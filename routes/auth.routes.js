@@ -12,7 +12,7 @@ const { authJwt } = require('../middleware');
 // Rate limiting for authentication endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 50, // 50 requests per window (increased for testing)
   message: { success: false, message: 'Too many authentication attempts. Please try again in 15 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -20,7 +20,7 @@ const authLimiter = rateLimit({
 
 const signupLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 signups per hour per IP
+  max: 20, // 20 signups per hour per IP (increased for testing)
   message: { success: false, message: 'Too many accounts created. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
