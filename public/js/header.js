@@ -301,13 +301,28 @@ function initFreshShareHeader(){
       });
     }
 
-    if (!verifyEmailModal && verifyEmailModalEl) {
+    // Global click handler inside the modal: close on any element that is
+    // marked with data-bs-dismiss="modal" or has the .btn-close class.
+    if (verifyEmailModalEl) {
       verifyEmailModalEl.addEventListener('click', function(evt){
-        if (evt.target === verifyEmailModalEl) {
+        const target = evt.target;
+        if (!target) return;
+
+        // Backdrop click (outside dialog) should also close
+        if (target === verifyEmailModalEl) {
           logDebug('Backdrop clicked');
+          hideVerifyModal();
+          return;
+        }
+
+        const closeMatch = target.closest('[data-bs-dismiss="modal"], .btn-close');
+        if (closeMatch) {
+          evt.preventDefault();
+          logDebug('Global modal close handler triggered');
           hideVerifyModal();
         }
       });
+
       verifyEmailModalEl.addEventListener('keydown', function(evt){
         if (evt.key === 'Escape') {
           logDebug('Escape pressed');
