@@ -215,6 +215,12 @@ function initFreshShareHeader(){
     const verifyErrorAlert = document.getElementById('verifyErrorAlert');
     const verifyEmailModalEl = document.getElementById('verifyEmailModal');
 
+    if (sendVerificationBtn && sendVerificationBtn.disabled) {
+      // Ensure the button is clickable when the page loads
+      sendVerificationBtn.disabled = false;
+      logDebug('Send verification button was disabled on load, enabling it');
+    }
+
     logDebug('Verify modal elements', {
       hasButton: !!verifyEmailBtn,
       hasModal: !!verifyEmailModalEl,
