@@ -136,8 +136,11 @@ class FreshShareHeader {
   }
 }
 
-// Initialize the header when DOM is loaded
-document.addEventListener('DOMContentLoaded', function(){
+function initFreshShareHeader(){
+  const logDebug = (...args) => {
+    try { console.debug('[FreshShare][header]', ...args); } catch (_) {}
+  };
+
   try {
     function setHTMLSafe(el, html){
       if (!el) return;
@@ -167,7 +170,18 @@ document.addEventListener('DOMContentLoaded', function(){
       return '';
     }
     const getToken = () => {
-      try { return localStorage.getItem('token') || getCookie('token'); } catch(_) { return getCookie('token'); }
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          logDebug('Token retrieved from localStorage');
+          return token;
+        }
+      } catch(_) { /* ignore */ }
+      const cookieToken = getCookie('token');
+      if (cookieToken) {
+        logDebug('Token retrieved from cookie');
+      }
+      return cookieToken;
     };
     const badge = document.getElementById('fsMsgBadge');
     async function refreshHeaderUnread() {
@@ -200,13 +214,22 @@ document.addEventListener('DOMContentLoaded', function(){
     const verifySuccessAlert = document.getElementById('verifySuccessAlert');
     const verifyErrorAlert = document.getElementById('verifyErrorAlert');
     const verifyEmailModalEl = document.getElementById('verifyEmailModal');
+
+    logDebug('Verify modal elements', {
+      hasButton: !!verifyEmailBtn,
+      hasModal: !!verifyEmailModalEl,
+      hasSendButton: !!sendVerificationBtn
+    });
+
     const bootstrapModalAvailable = typeof window !== 'undefined' && window.bootstrap && typeof window.bootstrap.Modal === 'function';
     let verifyEmailModal = null;
     if (verifyEmailModalEl && bootstrapModalAvailable) {
       try {
         verifyEmailModal = new window.bootstrap.Modal(verifyEmailModalEl);
+        logDebug('Bootstrap modal instantiated');
       } catch (_) {
         verifyEmailModal = null;
+        logDebug('Failed to instantiate Bootstrap modal, falling back');
       }
     }
 
@@ -214,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     function hideVerifyModal(){
       if (!verifyEmailModalEl) return;
+      logDebug('Hiding verify modal');
       if (verifyEmailModal) {
         try { verifyEmailModal.hide(); } catch(_) {}
         return;
@@ -233,6 +257,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     function showVerifyModal(){
       if (!verifyEmailModalEl) return;
+      logDebug('Showing verify modal');
       if (verifyEmailModal) {
         try { verifyEmailModal.show(); } catch(_) {}
         return;
@@ -256,6 +281,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if (verifyEmailBtn) {
       verifyEmailBtn.addEventListener('click', function(e){
         e.preventDefault();
+        logDebug('Verify email button clicked');
         showVerifyModal();
       });
     }
@@ -264,6 +290,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if (verifyModalCloseBtn) {
       verifyModalCloseBtn.addEventListener('click', function(e){
         e.preventDefault();
+        logDebug('Modal close button clicked');
         hideVerifyModal();
       });
     }
@@ -271,11 +298,13 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!verifyEmailModal && verifyEmailModalEl) {
       verifyEmailModalEl.addEventListener('click', function(evt){
         if (evt.target === verifyEmailModalEl) {
+          logDebug('Backdrop clicked');
           hideVerifyModal();
         }
       });
       verifyEmailModalEl.addEventListener('keydown', function(evt){
         if (evt.key === 'Escape') {
+          logDebug('Escape pressed');
           hideVerifyModal();
         }
       });
@@ -284,26 +313,33 @@ document.addEventListener('DOMContentLoaded', function(){
     if (sendVerificationBtn) {
       sendVerificationBtn.addEventListener('click', async function(){
         try {
+          logDebug('Send verification button clicked');
           if (verifySuccessAlert) verifySuccessAlert.classList.add('d-none');
           if (verifyErrorAlert) verifyErrorAlert.classList.add('d-none');
           sendVerificationBtn.disabled = true;
           setHTMLSafe(sendVerificationBtn, '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Sending...');
           const token = (function(){ try { return localStorage.getItem('token') || ''; } catch(_) { return ''; } })();
+          logDebug('Sending resend request', { hasToken: !!token });
           const response = await fetch('/api/email/resend-verification', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
             credentials: 'include'
           });
+          logDebug('Resend response received', { status: response.status });
           const data = await response.json().catch(() => ({}));
+          logDebug('Resend response payload', data);
           if (data && data.success) {
             if (verifySuccessAlert) verifySuccessAlert.classList.remove('d-none');
+            logDebug('Resend reported success');
           } else {
             if (verifyErrorAlert) {
               verifyErrorAlert.textContent = (data && data.message) || 'Failed to send verification email. Please try again.';
               verifyErrorAlert.classList.remove('d-none');
             }
+            logDebug('Resend reported failure');
           }
         } catch (error) {
+          logDebug('Resend request error', error);
           if (verifyErrorAlert) {
             verifyErrorAlert.textContent = 'An error occurred. Please try again later.';
             verifyErrorAlert.classList.remove('d-none');
@@ -312,8 +348,11 @@ document.addEventListener('DOMContentLoaded', function(){
         } finally {
           sendVerificationBtn.disabled = false;
           sendVerificationBtn.textContent = 'Send Verification Email';
+          logDebug('Send verification button reset');
         }
       });
+    } else {
+      logDebug('Send verification button not found');
     }
   } catch(_) {}
 
@@ -329,4 +368,11 @@ document.addEventListener('DOMContentLoaded', function(){
       });
     }
   } catch(_) {}
-});
+  try { console.debug('[FreshShare] header.js initialized'); } catch(_) {}
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initFreshShareHeader);
+} else {
+  initFreshShareHeader();
+}

@@ -142,6 +142,11 @@ exports.sendVerificationEmail = async (req, res) => {
     
     // Generate verification token
     const token = await generateVerificationToken(user);
+    console.log('[Email][Resend] generated new token', {
+      userId: user._id,
+      tokenLast4: token ? token.slice(-4) : null,
+      expiresAt: user.emailVerificationExpires
+    });
     
     // Create verification URL
     const verificationUrl = `${APP_URL}/verify-email?token=${token}`;
@@ -250,8 +255,14 @@ exports.checkEmailVerification = async (req, res) => {
     
     // Find user
     const user = await User.findById(userId);
+    console.log('[Email][Resend] user lookup result', {
+      found: !!user,
+      email: user ? user.email : null,
+      emailVerified: user ? user.emailVerified : null
+    });
     
     if (!user) {
+      console.warn('[Email][Resend] user not found');
       return res.status(404).json({
         success: false,
         message: 'User not found'
@@ -280,8 +291,16 @@ exports.checkEmailVerification = async (req, res) => {
 exports.resendVerificationEmail = async (req, res) => {
   try {
     const userId = req.userId; // Set by authJwt middleware
+    console.log('[Email][Resend] handler invoked', {
+      userId,
+      headersAuth: req.headers && req.headers.authorization ? 'present' : 'missing',
+      hasCookie: !!(req.cookies && req.cookies.token),
+      ip: req.ip,
+      userAgent: req.get && req.get('user-agent')
+    });
     
     if (!userId) {
+      console.warn('[Email][Resend] userId missing, returning 401');
       return res.status(401).json({
         success: false,
         message: 'User not authenticated'
@@ -334,13 +353,20 @@ exports.resendVerificationEmail = async (req, res) => {
     
     // Send email
     await transporter.sendMail(mailOptions);
+    console.log('[Email][Resend] email dispatched', {
+      to: user.email,
+      userId: user._id
+    });
     
     return res.status(200).json({
       success: true,
       message: 'Verification email sent successfully'
     });
   } catch (error) {
-    console.error('Resend verification email error:', error);
+    console.error('[Email][Resend] error', {
+      message: error && error.message,
+      stack: error && error.stack
+    });
     return res.status(500).json({
       success: false,
       message: 'An error occurred while resending verification email',
