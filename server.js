@@ -884,6 +884,15 @@ try {
 const authRoutes = require('./routes/auth.routes');
 app.use('/', authRoutes);
 
+// Email routes (verification, resend)
+try {
+  const emailRoutes = require('./routes/email.routes');
+  app.use('/api/email', emailRoutes);
+  console.log('Email API mounted at /api/email');
+} catch (e) {
+  console.error('Failed to mount /api/email:', e && e.message);
+}
+
 // Fallback: ensure critical auth API routes are available
 try {
   const authController = require('./controllers/auth.controller');
@@ -899,6 +908,8 @@ console.log('- /api/marketplace/upc-test/:upc - UPC test endpoint');
 console.log('- /api/groups - Groups API (create, list, manage)');
 console.log('- /api/auth/login - Login endpoint');
 console.log('- /api/auth/signup - Signup endpoint');
+console.log('- /api/email/resend-verification - Resend verification email');
+console.log('- /api/email/verify - Verify email with token');
 
 // Simple API root summary
 app.get('/api', (req, res) => {
