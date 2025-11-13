@@ -71,9 +71,9 @@
     <!-- DOMPurify for XSS Protection -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js" defer></script>
     <script src="/js/sanitize.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>" defer></script>
-    <script src="/js/header.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>"></script>
-    <script src="/js/toast.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>"></script>
-    <script src="/js/cart.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>"></script>
+    <script src="/js/header.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>" defer></script>
+    <script src="/js/toast.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>" defer></script>
+    <script src="/js/cart.js?v=<%= (typeof assetVersion !== 'undefined' ? assetVersion : Date.now()) %>" defer></script>
     
     <!-- Page-specific scripts -->
     <%- typeof script !== 'undefined' ? script : '' %>

@@ -141,9 +141,31 @@ document.addEventListener('DOMContentLoaded', function(){
   try {
     function setHTMLSafe(el, html){
       if (!el) return;
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
+      try {
+        if (window.DOMPurify) {
+          el.innerHTML = window.DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: ['span'],
+            ALLOWED_ATTR: ['class', 'role', 'aria-hidden']
+          });
+        } else {
+          el.innerHTML = html;
+        }
+      } catch (_) {
+        el.innerHTML = html;
+      }
+    }
+
+    function getCookie(name){
+      if (!name) return '';
+      try {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) {
+          return parts.pop().split(';').shift();
+        }
+      } catch (_) {/* ignore */}
+      return '';
+    }
     const getToken = () => {
       try { return localStorage.getItem('token') || getCookie('token'); } catch(_) { return getCookie('token'); }
     };
@@ -178,13 +200,84 @@ document.addEventListener('DOMContentLoaded', function(){
     const verifySuccessAlert = document.getElementById('verifySuccessAlert');
     const verifyErrorAlert = document.getElementById('verifyErrorAlert');
     const verifyEmailModalEl = document.getElementById('verifyEmailModal');
+    const bootstrapModalAvailable = typeof window !== 'undefined' && window.bootstrap && typeof window.bootstrap.Modal === 'function';
     let verifyEmailModal = null;
-    try { if (verifyEmailModalEl && window.bootstrap) verifyEmailModal = new bootstrap.Modal(verifyEmailModalEl); } catch(_) {}
+    if (verifyEmailModalEl && bootstrapModalAvailable) {
+      try {
+        verifyEmailModal = new window.bootstrap.Modal(verifyEmailModalEl);
+      } catch (_) {
+        verifyEmailModal = null;
+      }
+    }
 
-    if (verifyEmailBtn && verifyEmailModal) {
+    const FALLBACK_BACKDROP_ID = 'verifyEmailModalBackdrop';
+
+    function hideVerifyModal(){
+      if (!verifyEmailModalEl) return;
+      if (verifyEmailModal) {
+        try { verifyEmailModal.hide(); } catch(_) {}
+        return;
+      }
+      verifyEmailModalEl.classList.remove('show');
+      verifyEmailModalEl.style.display = 'none';
+      verifyEmailModalEl.setAttribute('aria-hidden', 'true');
+      verifyEmailModalEl.removeAttribute('aria-modal');
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('overflow');
+      const backdrop = document.getElementById(FALLBACK_BACKDROP_ID);
+      if (backdrop) {
+        backdrop.removeEventListener('click', hideVerifyModal);
+        backdrop.remove();
+      }
+    }
+
+    function showVerifyModal(){
+      if (!verifyEmailModalEl) return;
+      if (verifyEmailModal) {
+        try { verifyEmailModal.show(); } catch(_) {}
+        return;
+      }
+      verifyEmailModalEl.classList.add('show');
+      verifyEmailModalEl.style.display = 'block';
+      verifyEmailModalEl.removeAttribute('aria-hidden');
+      verifyEmailModalEl.setAttribute('aria-modal', 'true');
+      document.body.classList.add('modal-open');
+      document.body.style.overflow = 'hidden';
+      let backdrop = document.getElementById(FALLBACK_BACKDROP_ID);
+      if (!backdrop) {
+        backdrop = document.createElement('div');
+        backdrop.id = FALLBACK_BACKDROP_ID;
+        backdrop.className = 'modal-backdrop fade show';
+        backdrop.addEventListener('click', hideVerifyModal);
+        document.body.appendChild(backdrop);
+      }
+    }
+
+    if (verifyEmailBtn) {
       verifyEmailBtn.addEventListener('click', function(e){
         e.preventDefault();
-        try { verifyEmailModal.show(); } catch(_) {}
+        showVerifyModal();
+      });
+    }
+
+    const verifyModalCloseBtn = verifyEmailModalEl ? verifyEmailModalEl.querySelector('[data-bs-dismiss="modal"]') : null;
+    if (verifyModalCloseBtn) {
+      verifyModalCloseBtn.addEventListener('click', function(e){
+        e.preventDefault();
+        hideVerifyModal();
+      });
+    }
+
+    if (!verifyEmailModal && verifyEmailModalEl) {
+      verifyEmailModalEl.addEventListener('click', function(evt){
+        if (evt.target === verifyEmailModalEl) {
+          hideVerifyModal();
+        }
+      });
+      verifyEmailModalEl.addEventListener('keydown', function(evt){
+        if (evt.key === 'Escape') {
+          hideVerifyModal();
+        }
       });
     }
 
