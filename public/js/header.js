@@ -198,7 +198,8 @@ document.addEventListener('DOMContentLoaded', function(){
           const token = (function(){ try { return localStorage.getItem('token') || ''; } catch(_) { return ''; } })();
           const response = await fetch('/api/email/resend-verification', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) }
+            headers: { 'Content-Type': 'application/json', ...(token ? { 'Authorization': `Bearer ${token}` } : {}) },
+            credentials: 'include'
           });
           const data = await response.json().catch(() => ({}));
           if (data && data.success) {
