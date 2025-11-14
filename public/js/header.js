@@ -292,14 +292,17 @@ function initFreshShareHeader(){
       });
     }
 
-    const verifyModalCloseBtn = verifyEmailModalEl ? verifyEmailModalEl.querySelector('[data-bs-dismiss="modal"]') : null;
-    if (verifyModalCloseBtn) {
-      verifyModalCloseBtn.addEventListener('click', function(e){
+    const headerCloseBtn = verifyEmailModalEl ? verifyEmailModalEl.querySelector('.btn-close') : null;
+    const footerCloseBtn = verifyEmailModalEl ? verifyEmailModalEl.querySelector('.modal-footer [data-bs-dismiss="modal"]') : null;
+
+    [headerCloseBtn, footerCloseBtn].forEach(btn => {
+      if (!btn) return;
+      btn.addEventListener('click', function(e){
         e.preventDefault();
-        logDebug('Modal close button clicked');
+        logDebug('Explicit modal close button clicked');
         hideVerifyModal();
       });
-    }
+    });
 
     // Global click handler inside the modal: close on any element that is
     // marked with data-bs-dismiss="modal" or has the .btn-close class.
