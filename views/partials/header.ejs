@@ -44,9 +44,9 @@
                 </a>
                 <!-- Verification status notification -->
                 <% if (typeof locals.user.emailVerified !== 'undefined' && !locals.user.emailVerified) { %>
-                    <a href="#" id="verifyEmailBtn" class="fs-btn fs-btn-warning" title="Click to resend verification email">
+                    <button type="button" class="fs-btn fs-btn-warning" data-bs-toggle="modal" data-bs-target="#verifyEmailModal" title="Click to resend verification email">
                         <i class="fa-solid fa-exclamation-circle"></i> Verify Email
-                    </a>
+                    </button>
                 <% } %>
                 <div class="dropdown">
                     <button class="fs-btn fs-btn-primary dropdown-toggle" type="button" id="userMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">

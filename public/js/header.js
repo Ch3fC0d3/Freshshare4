@@ -207,132 +207,19 @@ function initFreshShareHeader(){
     // Listen for custom events from other pages to refresh quickly
     window.addEventListener('messages:unread-updated', refreshHeaderUnread);
   } catch(_) {}
-  // Verify Email modal logic (moved from header.ejs to comply with CSP)
+  // Verify Email modal logic - Bootstrap handles open/close via data attributes
+  // We only need to handle the Send Verification Email button click
   try {
-    const verifyEmailBtn = document.getElementById('verifyEmailBtn');
     const sendVerificationBtn = document.getElementById('sendVerificationBtn');
     const verifySuccessAlert = document.getElementById('verifySuccessAlert');
     const verifyErrorAlert = document.getElementById('verifyErrorAlert');
-    const verifyEmailModalEl = document.getElementById('verifyEmailModal');
 
     if (sendVerificationBtn && sendVerificationBtn.disabled) {
-      // Ensure the button is clickable when the page loads
       sendVerificationBtn.disabled = false;
-      logDebug('Send verification button was disabled on load, enabling it');
+      logDebug('Send verification button enabled');
     }
 
-    logDebug('Verify modal elements', {
-      hasButton: !!verifyEmailBtn,
-      hasModal: !!verifyEmailModalEl,
-      hasSendButton: !!sendVerificationBtn
-    });
-
-    const bootstrapModalAvailable = typeof window !== 'undefined' && window.bootstrap && typeof window.bootstrap.Modal === 'function';
-    let verifyEmailModal = null;
-    if (verifyEmailModalEl && bootstrapModalAvailable) {
-      try {
-        verifyEmailModal = new window.bootstrap.Modal(verifyEmailModalEl);
-        logDebug('Bootstrap modal instantiated');
-      } catch (_) {
-        verifyEmailModal = null;
-        logDebug('Failed to instantiate Bootstrap modal, falling back');
-      }
-    }
-
-    const FALLBACK_BACKDROP_ID = 'verifyEmailModalBackdrop';
-
-    function hideVerifyModal(){
-      if (!verifyEmailModalEl) return;
-      logDebug('Hiding verify modal');
-      if (verifyEmailModal) {
-        try { verifyEmailModal.hide(); } catch(_) {}
-        return;
-      }
-      verifyEmailModalEl.classList.remove('show');
-      verifyEmailModalEl.style.display = 'none';
-      verifyEmailModalEl.setAttribute('aria-hidden', 'true');
-      verifyEmailModalEl.removeAttribute('aria-modal');
-      document.body.classList.remove('modal-open');
-      document.body.style.removeProperty('overflow');
-      const backdrop = document.getElementById(FALLBACK_BACKDROP_ID);
-      if (backdrop) {
-        backdrop.removeEventListener('click', hideVerifyModal);
-        backdrop.remove();
-      }
-    }
-
-    function showVerifyModal(){
-      if (!verifyEmailModalEl) return;
-      logDebug('Showing verify modal');
-      if (verifyEmailModal) {
-        try { verifyEmailModal.show(); } catch(_) {}
-        return;
-      }
-      verifyEmailModalEl.classList.add('show');
-      verifyEmailModalEl.style.display = 'block';
-      verifyEmailModalEl.removeAttribute('aria-hidden');
-      verifyEmailModalEl.setAttribute('aria-modal', 'true');
-      document.body.classList.add('modal-open');
-      document.body.style.overflow = 'hidden';
-      let backdrop = document.getElementById(FALLBACK_BACKDROP_ID);
-      if (!backdrop) {
-        backdrop = document.createElement('div');
-        backdrop.id = FALLBACK_BACKDROP_ID;
-        backdrop.className = 'modal-backdrop fade show';
-        backdrop.addEventListener('click', hideVerifyModal);
-        document.body.appendChild(backdrop);
-      }
-    }
-
-    if (verifyEmailBtn) {
-      verifyEmailBtn.addEventListener('click', function(e){
-        e.preventDefault();
-        logDebug('Verify email button clicked');
-        showVerifyModal();
-      });
-    }
-
-    const headerCloseBtn = verifyEmailModalEl ? verifyEmailModalEl.querySelector('.btn-close') : null;
-    const footerCloseBtn = verifyEmailModalEl ? verifyEmailModalEl.querySelector('.modal-footer [data-bs-dismiss="modal"]') : null;
-
-    [headerCloseBtn, footerCloseBtn].forEach(btn => {
-      if (!btn) return;
-      btn.addEventListener('click', function(e){
-        e.preventDefault();
-        logDebug('Explicit modal close button clicked');
-        hideVerifyModal();
-      });
-    });
-
-    // Global click handler inside the modal: close on any element that is
-    // marked with data-bs-dismiss="modal" or has the .btn-close class.
-    if (verifyEmailModalEl) {
-      verifyEmailModalEl.addEventListener('click', function(evt){
-        const target = evt.target;
-        if (!target) return;
-
-        // Backdrop click (outside dialog) should also close
-        if (target === verifyEmailModalEl) {
-          logDebug('Backdrop clicked');
-          hideVerifyModal();
-          return;
-        }
-
-        const closeMatch = target.closest('[data-bs-dismiss="modal"], .btn-close');
-        if (closeMatch) {
-          evt.preventDefault();
-          logDebug('Global modal close handler triggered');
-          hideVerifyModal();
-        }
-      });
-
-      verifyEmailModalEl.addEventListener('keydown', function(evt){
-        if (evt.key === 'Escape') {
-          logDebug('Escape pressed');
-          hideVerifyModal();
-        }
-      });
-    }
+    logDebug('Verify email send button found:', !!sendVerificationBtn);
 
     if (sendVerificationBtn) {
       sendVerificationBtn.addEventListener('click', async function(){
@@ -375,8 +262,6 @@ function initFreshShareHeader(){
           logDebug('Send verification button reset');
         }
       });
-    } else {
-      logDebug('Send verification button not found');
     }
   } catch(_) {}
 
