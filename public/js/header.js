@@ -210,9 +210,24 @@ function initFreshShareHeader(){
   // Verify Email modal logic - Bootstrap handles open/close via data attributes
   // We only need to handle the Send Verification Email button click
   try {
+    const verifyEmailModalEl = document.getElementById('verifyEmailModal');
     const sendVerificationBtn = document.getElementById('sendVerificationBtn');
     const verifySuccessAlert = document.getElementById('verifySuccessAlert');
     const verifyErrorAlert = document.getElementById('verifyErrorAlert');
+
+    // Explicitly initialize Bootstrap Modal to ensure data-bs-dismiss works
+    if (verifyEmailModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+      try {
+        const modalInstance = new bootstrap.Modal(verifyEmailModalEl, {
+          backdrop: true,
+          keyboard: true,
+          focus: true
+        });
+        logDebug('Bootstrap Modal initialized for verify email');
+      } catch (e) {
+        logDebug('Failed to initialize Bootstrap Modal:', e);
+      }
+    }
 
     if (sendVerificationBtn && sendVerificationBtn.disabled) {
       sendVerificationBtn.disabled = false;
