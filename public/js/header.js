@@ -231,6 +231,32 @@ function initFreshShareHeader(){
           } else {
             logDebug('Bootstrap Modal already initialized');
           }
+          
+          // Add explicit click handlers for close buttons as fallback
+          const closeButtons = verifyEmailModalEl.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+          closeButtons.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+              logDebug('Close button clicked, hiding modal');
+              e.preventDefault();
+              e.stopPropagation();
+              const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
+              if (instance) {
+                instance.hide();
+              }
+            });
+          });
+          
+          // Also handle backdrop clicks
+          verifyEmailModalEl.addEventListener('click', function(e) {
+            if (e.target === verifyEmailModalEl) {
+              logDebug('Backdrop clicked, hiding modal');
+              const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
+              if (instance) {
+                instance.hide();
+              }
+            }
+          });
+          
         } catch (e) {
           logDebug('Failed to initialize Bootstrap Modal:', e);
         }
