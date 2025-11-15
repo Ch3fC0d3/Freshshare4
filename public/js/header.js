@@ -215,19 +215,33 @@ function initFreshShareHeader(){
     const verifySuccessAlert = document.getElementById('verifySuccessAlert');
     const verifyErrorAlert = document.getElementById('verifyErrorAlert');
 
-    // Explicitly initialize Bootstrap Modal to ensure data-bs-dismiss works
-    if (verifyEmailModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
-      try {
-        const modalInstance = new bootstrap.Modal(verifyEmailModalEl, {
-          backdrop: true,
-          keyboard: true,
-          focus: true
-        });
-        logDebug('Bootstrap Modal initialized for verify email');
-      } catch (e) {
-        logDebug('Failed to initialize Bootstrap Modal:', e);
+    // Wait for Bootstrap to be available, then initialize modal
+    function initVerifyModal() {
+      if (verifyEmailModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        try {
+          // Don't create a new instance if one already exists
+          let modalInstance = bootstrap.Modal.getInstance(verifyEmailModalEl);
+          if (!modalInstance) {
+            modalInstance = new bootstrap.Modal(verifyEmailModalEl, {
+              backdrop: true,
+              keyboard: true,
+              focus: true
+            });
+            logDebug('Bootstrap Modal initialized for verify email');
+          } else {
+            logDebug('Bootstrap Modal already initialized');
+          }
+        } catch (e) {
+          logDebug('Failed to initialize Bootstrap Modal:', e);
+        }
+      } else if (typeof bootstrap === 'undefined') {
+        logDebug('Bootstrap not yet loaded, retrying in 100ms');
+        setTimeout(initVerifyModal, 100);
       }
     }
+    
+    // Start initialization
+    initVerifyModal();
 
     if (sendVerificationBtn && sendVerificationBtn.disabled) {
       sendVerificationBtn.disabled = false;
