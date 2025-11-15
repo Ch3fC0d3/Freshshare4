@@ -232,30 +232,33 @@ function initFreshShareHeader(){
             logDebug('Bootstrap Modal already initialized');
           }
           
-          // Add explicit click handlers for close buttons as fallback
-          const closeButtons = verifyEmailModalEl.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
-          closeButtons.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-              logDebug('Close button clicked, hiding modal');
+          // Use document-level event delegation to catch clicks on close buttons
+          // This bypasses any pointer-events or propagation issues
+          document.addEventListener('click', function(e) {
+            // Check if click is on a close button inside the verify email modal
+            const target = e.target;
+            const isCloseButton = target.closest('#verifyEmailModal [data-bs-dismiss="modal"], #verifyEmailModal .btn-close');
+            
+            if (isCloseButton) {
+              logDebug('Close button clicked via delegation, hiding modal');
               e.preventDefault();
               e.stopPropagation();
               const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
               if (instance) {
                 instance.hide();
               }
-            });
-          });
-          
-          // Also handle backdrop clicks
-          verifyEmailModalEl.addEventListener('click', function(e) {
-            if (e.target === verifyEmailModalEl) {
-              logDebug('Backdrop clicked, hiding modal');
+              return;
+            }
+            
+            // Check if click is on the backdrop (modal itself, not its children)
+            if (target.id === 'verifyEmailModal' && target.classList.contains('modal')) {
+              logDebug('Backdrop clicked via delegation, hiding modal');
               const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
               if (instance) {
                 instance.hide();
               }
             }
-          });
+          }, true); // Use capture phase to catch events early
           
         } catch (e) {
           logDebug('Failed to initialize Bootstrap Modal:', e);
