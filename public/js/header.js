@@ -219,6 +219,18 @@ function initFreshShareHeader(){
     function initVerifyModal() {
       if (verifyEmailModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
         try {
+          // Remove any interfering browser extension overlays
+          const removeExtensionOverlays = () => {
+            const overlays = document.querySelectorAll('scribe-shadow, [id*="crxjs"], [id*="extension"]');
+            overlays.forEach(el => {
+              if (el.style.zIndex && parseInt(el.style.zIndex) > 1000000) {
+                logDebug('Removing high z-index extension overlay:', el.id);
+                el.remove();
+              }
+            });
+          };
+          removeExtensionOverlays();
+          
           // Don't create a new instance if one already exists
           let modalInstance = bootstrap.Modal.getInstance(verifyEmailModalEl);
           if (!modalInstance) {
