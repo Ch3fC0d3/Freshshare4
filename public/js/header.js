@@ -244,52 +244,9 @@ function initFreshShareHeader(){
             logDebug('Bootstrap Modal already initialized');
           }
 
-          // Use document-level event delegation to handle closing the verify email modal.
-          // Only close on explicit close controls or on the Bootstrap backdrop.
-          document.addEventListener('click', function(e) {
-            const target = e.target;
-            const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
-            if (!instance || !verifyEmailModalEl) {
-              return;
-            }
-
-            const isModalShown = verifyEmailModalEl.classList.contains('show');
-            if (!isModalShown) {
-              return;
-            }
-
-            // 1) Direct close buttons inside the modal (X and footer Close)
-            const isCloseButton = target.closest('#verifyEmailModal [data-bs-dismiss="modal"], #verifyEmailModal .btn-close');
-            if (isCloseButton) {
-              logDebug('Close button clicked via delegation, hiding modal');
-              e.preventDefault();
-              e.stopPropagation();
-              instance.hide();
-              return;
-            }
-
-            // 2) Check if click is inside the modal content area - if so, do nothing
-            const modalContent = verifyEmailModalEl.querySelector('.modal-content');
-            if (modalContent && modalContent.contains(target)) {
-              logDebug('Click inside modal content, keeping modal open');
-              return;
-            }
-
-            // 3) Backdrop click: click on Bootstrap's backdrop element
-            if (target.classList.contains('modal-backdrop')) {
-              logDebug('Backdrop clicked, hiding modal');
-              e.preventDefault();
-              instance.hide();
-              return;
-            }
-
-            // 4) Click on the modal overlay itself (outside the content box)
-            if (target === verifyEmailModalEl || verifyEmailModalEl.contains(target)) {
-              logDebug('Clicked outside modal content, hiding modal');
-              e.preventDefault();
-              instance.hide();
-            }
-          }, true); // Use capture phase to catch events early
+          // Rely on Bootstrap's built-in behavior for close buttons, ESC, and
+          // backdrop clicks. No additional global click handlers are needed
+          // now that the modal stacking and z-index issues are resolved.
 
         } catch (e) {
           logDebug('Failed to initialize Bootstrap Modal:', e);
