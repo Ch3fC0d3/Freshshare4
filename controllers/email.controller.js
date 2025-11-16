@@ -5,7 +5,10 @@ const User = db.user;
 
 // Environment variables for email (should be set in .env)
 const EMAIL_HOST = process.env.EMAIL_HOST || 'smtp.gmail.com';
-const EMAIL_PORT = process.env.EMAIL_PORT || 587;
+// Ensure port is numeric; default to 587 if not set or invalid
+const EMAIL_PORT = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT, 10) || 587 : 587;
+// Allow explicit EMAIL_SECURE override ("true"/"1"), otherwise infer from port 465
+const EMAIL_SECURE = (process.env.EMAIL_SECURE === 'true' || process.env.EMAIL_SECURE === '1') || EMAIL_PORT === 465;
 const EMAIL_USER = process.env.EMAIL_USER || 'your-email@gmail.com';
 const EMAIL_PASS = process.env.EMAIL_PASS || 'your-password';
 const EMAIL_FROM = process.env.EMAIL_FROM || 'FreshShare <noreply@freshshare.com>';
@@ -26,11 +29,17 @@ if (isEmailConfigValid()) {
   transporter = nodemailer.createTransport({
     host: EMAIL_HOST,
     port: EMAIL_PORT,
-    secure: EMAIL_PORT === 465, // true for 465, false for other ports
+    secure: EMAIL_SECURE,
     auth: {
       user: EMAIL_USER,
       pass: EMAIL_PASS,
     },
+  });
+  console.log('[Email][Config] Transporter initialized', {
+    host: EMAIL_HOST,
+    port: EMAIL_PORT,
+    secure: EMAIL_SECURE,
+    user: EMAIL_USER
   });
 } else {
   console.warn('Email configuration not properly set up. Using mock email implementation.');
