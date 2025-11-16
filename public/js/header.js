@@ -268,22 +268,23 @@ function initFreshShareHeader(){
               return;
             }
 
-            // 2) Clicks on the send button should NOT close the modal
-            const isSendButton = target.closest('#sendVerificationBtn');
-            if (isSendButton) {
+            // 2) Check if click is inside the modal content area - if so, do nothing
+            const modalContent = verifyEmailModalEl.querySelector('.modal-content');
+            if (modalContent && modalContent.contains(target)) {
+              logDebug('Click inside modal content, keeping modal open');
               return;
             }
 
             // 3) Backdrop click: click on Bootstrap's backdrop element
             if (target.classList.contains('modal-backdrop')) {
-              logDebug('Backdrop clicked via delegation, hiding modal');
+              logDebug('Backdrop clicked, hiding modal');
               e.preventDefault();
               instance.hide();
               return;
             }
 
-            // 4) Click outside modal content (on the modal itself, not the inner content)
-            if (target === verifyEmailModalEl) {
+            // 4) Click on the modal overlay itself (outside the content box)
+            if (target === verifyEmailModalEl || verifyEmailModalEl.contains(target)) {
               logDebug('Clicked outside modal content, hiding modal');
               e.preventDefault();
               instance.hide();
