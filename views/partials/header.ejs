@@ -71,34 +71,6 @@
             <span></span>
         </button>
     </div>
-    
-    <!-- Verification email modal -->
-    <% if (locals.user && typeof locals.user.emailVerified !== 'undefined' && !locals.user.emailVerified) { %>
-    <div class="modal fade" id="verifyEmailModal" tabindex="-1" aria-labelledby="verifyEmailModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="verifyEmailModalLabel">Verify Your Email</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Your email address (<strong><%= locals.user.email %></strong>) has not been verified yet.</p>
-                    <p>Would you like us to send a new verification email?</p>
-                    <div class="alert alert-success d-none" id="verifySuccessAlert">
-                        Verification email sent successfully! Please check your inbox.
-                    </div>
-                    <div class="alert alert-danger d-none" id="verifyErrorAlert">
-                        Failed to send verification email. Please try again.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="sendVerificationBtn">Send Verification Email</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    <% } %>
 </header>
 
 <!-- Inline verify-email script removed for CSP compliance. Logic lives in /js/header.js -->
