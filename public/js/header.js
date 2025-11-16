@@ -245,7 +245,7 @@ function initFreshShareHeader(){
           }
 
           // Use document-level event delegation to handle closing the verify email modal.
-          // This bypasses any pointer-events or overlay issues.
+          // Only close on explicit close controls or on the Bootstrap backdrop.
           document.addEventListener('click', function(e) {
             const target = e.target;
             const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
@@ -272,13 +272,6 @@ function initFreshShareHeader(){
             const isSendButton = target.closest('#sendVerificationBtn');
             if (isSendButton) {
               return;
-            }
-
-            // 3) Fallback: any click outside the modal while it is open closes it.
-            const isInsideModal = target.closest('#verifyEmailModal');
-            if (!isInsideModal) {
-              logDebug('Click outside modal while open, hiding modal');
-              instance.hide();
             }
           }, true); // Use capture phase to catch events early
 
