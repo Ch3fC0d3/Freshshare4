@@ -273,6 +273,21 @@ function initFreshShareHeader(){
             if (isSendButton) {
               return;
             }
+
+            // 3) Backdrop click: click on Bootstrap's backdrop element
+            if (target.classList.contains('modal-backdrop')) {
+              logDebug('Backdrop clicked via delegation, hiding modal');
+              e.preventDefault();
+              instance.hide();
+              return;
+            }
+
+            // 4) Click outside modal content (on the modal itself, not the inner content)
+            if (target === verifyEmailModalEl) {
+              logDebug('Clicked outside modal content, hiding modal');
+              e.preventDefault();
+              instance.hide();
+            }
           }, true); // Use capture phase to catch events early
 
         } catch (e) {
