@@ -243,35 +243,45 @@ function initFreshShareHeader(){
           } else {
             logDebug('Bootstrap Modal already initialized');
           }
-          
-          // Use document-level event delegation to catch clicks on close buttons
-          // This bypasses any pointer-events or propagation issues
+
+          // Use document-level event delegation to handle closing the verify email modal.
+          // This bypasses any pointer-events or overlay issues.
           document.addEventListener('click', function(e) {
-            // Check if click is on a close button inside the verify email modal
             const target = e.target;
+            const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
+            if (!instance || !verifyEmailModalEl) {
+              return;
+            }
+
+            const isModalShown = verifyEmailModalEl.classList.contains('show');
+            if (!isModalShown) {
+              return;
+            }
+
+            // 1) Direct close buttons inside the modal (X and footer Close)
             const isCloseButton = target.closest('#verifyEmailModal [data-bs-dismiss="modal"], #verifyEmailModal .btn-close');
-            
             if (isCloseButton) {
               logDebug('Close button clicked via delegation, hiding modal');
               e.preventDefault();
               e.stopPropagation();
-              const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
-              if (instance) {
-                instance.hide();
-              }
+              instance.hide();
               return;
             }
-            
-            // Check if click is on the backdrop (modal itself, not its children)
-            if (target.id === 'verifyEmailModal' && target.classList.contains('modal')) {
-              logDebug('Backdrop clicked via delegation, hiding modal');
-              const instance = bootstrap.Modal.getInstance(verifyEmailModalEl);
-              if (instance) {
-                instance.hide();
-              }
+
+            // 2) Clicks on the send button should NOT close the modal
+            const isSendButton = target.closest('#sendVerificationBtn');
+            if (isSendButton) {
+              return;
+            }
+
+            // 3) Fallback: any click outside the modal while it is open closes it.
+            const isInsideModal = target.closest('#verifyEmailModal');
+            if (!isInsideModal) {
+              logDebug('Click outside modal while open, hiding modal');
+              instance.hide();
             }
           }, true); // Use capture phase to catch events early
-          
+
         } catch (e) {
           logDebug('Failed to initialize Bootstrap Modal:', e);
         }
